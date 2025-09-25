@@ -8,21 +8,32 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
-
+        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_PASSWORD }}
-
+          username: jerryng23
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          
       - name: Build and push Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:latest .
-          docker push ${{ secrets.DOCKERHUB_ACCESS_USERNAME }}/devops-day3:latest
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: |
+            jerryng23/devops-day3:latest
+            jerryng23/devops-day3:${{ github.sha }}
+            
+      - name: Verify
+        run: echo "Image digest:" ${{ steps.docker_build.outputs.digest }}
