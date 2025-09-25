@@ -1,0 +1,10 @@
+services:
+  devops-day3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: devops-day3:latest  
+    container_name: devops-day3
+    ports:
+      - "8000:8000"
+    restart: always
