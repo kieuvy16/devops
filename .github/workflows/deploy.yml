@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-env:
-  DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  IMAGE_NAME: devops-day3
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -17,15 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Validate environment
-        run: |
-          if [ -z "$DOCKER_USERNAME" ]; then
-            echo "❌ DOCKERHUB_USERNAME secret is not set or is empty"
-            echo "Please set DOCKERHUB_USERNAME in repository secrets"
-            exit 1
-          fi
-          echo "✅ Docker username: $DOCKER_USERNAME"
-          
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -33,16 +20,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKER_USERNAME }}
+          username: jerryng23
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-          
-      - name: Generate tags
-        id: tags
-        run: |
-          REPO_NAME="${DOCKER_USERNAME}/${IMAGE_NAME}"
-          echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
-          echo "latest=${REPO_NAME}:latest" >> $GITHUB_OUTPUT
-          echo "sha=${REPO_NAME}:${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
           
       - name: Build and push Docker image
         id: docker_build
@@ -53,8 +32,8 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: |
-            ${{ steps.tags.outputs.latest }}
-            ${{ steps.tags.outputs.sha }}
+            jerryng23/devops-day3:latest
+            jerryng23/devops-day3:${{ github.sha }}
             
       - name: Verify
         run: echo "Image digest:" ${{ steps.docker_build.outputs.digest }}
