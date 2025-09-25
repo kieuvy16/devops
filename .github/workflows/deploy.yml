@@ -1,38 +1,55 @@
-name: Debug Docker Build
+name: DevOps Day3 CI/CD
 
 on:
   push:
     branches:
       - main
 
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  IMAGE_NAME: devops-day3
+
 jobs:
-  debug:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Debug secrets
+      - name: Validate environment
         run: |
-          echo "Checking secrets..."
-          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
-            echo "❌ DOCKERHUB_USERNAME is empty or not set!"
-          else
-            echo "✅ DOCKERHUB_USERNAME is set"
-            echo "Username length: ${#DOCKERHUB_USERNAME}"
+          if [ -z "$DOCKER_USERNAME" ]; then
+            echo "❌ DOCKERHUB_USERNAME secret is not set or is empty"
+            echo "Please set DOCKERHUB_USERNAME in repository secrets"
+            exit 1
           fi
+          echo "✅ Docker username: $DOCKER_USERNAME"
           
-          if [ -z "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" ]; then
-            echo "❌ DOCKERHUB_ACCESS_TOKEN is empty or not set!"
-          else
-            echo "✅ DOCKERHUB_ACCESS_TOKEN is set"
-          fi
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
           
-      - name: Test tag generation
+      - name: Generate tags
+        id: tags
         run: |
-          echo "Generated tags would be:"
-          echo "${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:latest"
-          echo "${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:${{ github.sha }}"
+          REPO_NAME="${DOCKER_USERNAME}/${IMAGE_NAME}"
+          echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
+          echo "latest=${REPO_NAME}:latest" >> $GITHUB_OUTPUT
+          echo "sha=${REPO_NAME}:${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.latest }}
+            ${{ steps.tags.outputs.sha }}
+          platforms: linux/amd64
+          no-cache: false
