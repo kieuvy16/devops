@@ -20,9 +20,9 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:latest .
-          docker push ${{ secrets.DOCKERHUB_ACCESS_USERNAME }}/devops-day3:latest
+          docker push ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}/devops-day3:latest
