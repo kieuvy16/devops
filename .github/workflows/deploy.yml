@@ -46,10 +46,11 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./
+          file: ./Dockerfile
+          builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: |
-            ${{ steps.tags.outputs.latest }}
-            ${{ steps.tags.outputs.sha }}
-          platforms: linux/amd64
-          no-cache: false
+          tag: ${{ secrets.DOCKERHUB_USERNAME }}/DepOps_Day3
+      - name: Verify
+        run: echo ${{ steps.docker_build.outputs.digest }}
+          
