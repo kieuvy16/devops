@@ -27,6 +27,7 @@ jobs:
           echo "✅ Docker username: $DOCKER_USERNAME"
           
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
         
       - name: Login to Docker Hub
@@ -44,13 +45,16 @@ jobs:
           echo "sha=${REPO_NAME}:${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
           
       - name: Build and push Docker image
+        id: docker_build
         uses: docker/build-push-action@v5
         with:
-          context: ./
+          context: .
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tag: ${{ secrets.DOCKERHUB_USERNAME }}/DepOps_Day3
+          tags: |
+            ${{ steps.tags.outputs.latest }}
+            ${{ steps.tags.outputs.sha }}
+            
       - name: Verify
-        run: echo ${{ steps.docker_build.outputs.digest }}
-          
+        run: echo "Image digest:" ${{ steps.docker_build.outputs.digest }}
