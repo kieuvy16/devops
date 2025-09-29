@@ -8,21 +8,25 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
+      # 1. Lấy source code
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
+      # 2. Setup Docker Buildx
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-        
+
+      # 3. Login vào Docker Hub bằng secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-          
+
+      # 4. Build và push image lên Docker Hub
       - name: Build and push Docker image
         id: docker_build
         uses: docker/build-push-action@v5
@@ -33,8 +37,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            vyyy/devops-day3:latest
-            vyyy/devops-day3:${{ github.sha }}
-            
-      - name: Verify
-        run: echo "Image digest:" ${{ steps.docker_build.outputs.digest }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/devops-day3:${{ github.sha }}
+
+      # 5. Verify
+      - name: Verify Docker digest
+        run: echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
